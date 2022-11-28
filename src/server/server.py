@@ -10,22 +10,32 @@ from typing import (
 )
 import asyncio
 from .cli import CliManager
+from .database import Databases, Database, DialectBuilder
 
 
 Target: TypeAlias = Callable[[None], None]
+MappedData: TypeAlias = Mapping[str, Any]
 
 
 class Server:
     def __init__(
         self,
-        cli: CliManager
+        cli: CliManager,
+        databases: Databases
     ) -> None:
         self.__cli: CliManager = cli
+
+        self.__databases: Databases = databases
+
         self.__listeners: List[Target] = []
 
     @property
     def cli(self) -> CliManager:
         return self.__cli
+
+    @property
+    def databases(self) -> Databases:
+        return self.__databases
 
     def initialize(self, target: Target) -> Target:
         self.__listeners.append(target)
@@ -43,7 +53,7 @@ class Server:
 
 class ServerFactory:
     @classmethod
-    def __create_cli(cls, data: Mapping[str, Any]) -> CliManager:
+    def __create_cli(cls, data: MappedData) -> CliManager:
         managers: Sequence[str] = data['managers']
 
         del data['managers']
@@ -56,10 +66,41 @@ class ServerFactory:
         return cli
 
     @classmethod
+    def __create_databases(cls, data: MappedData) -> Databases:
+        databases: Databases = Databases()
+
+        for name, options in data.values():
+            database_builder: DialectBuilder = DialectBuilder()
+
+            database_builder\
+                .set_name(name)\
+                .set_host(options['host'])\
+                .set_port(options['port'])\
+                .set_dbname(options['dbname'])\
+                .set_credentials(options['username'], options['password'])\
+                .set_drives(options['driver'], options.get('driver_async'))
+
+            if options.get('async'):
+                database_builder.set_async(options.get('async'))
+
+            if options.get('debug'):
+                database_builder.set_debug(options.get('debug'))
+
+            database: Database = database_builder.build()
+
+            databases.add_database(database)
+
+    @classmethod
     def create(
         cls,
-        cli: Mapping[str, Any]
+        cli: MappedData,
+        databases: MappedData
     ) -> Server:
         cli_manager: CliManager = cls.__create_cli(cli)
 
-        return Server(cli_manager)
+        databases_: Databases = cls.__create_databases(databases)
+
+        return Server(
+            cli_manager, 
+            databases_
+        )

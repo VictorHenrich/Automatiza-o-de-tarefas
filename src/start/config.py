@@ -8,3 +8,8 @@ OPTIONS_CLI = {
     "description": "AUTOMAÇÕES COM LINGUAGEM PYTHON",
     "managers": ["teste"]
 }
+
+
+OPTIONS_DATABASES = {
+    
+}
