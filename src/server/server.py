@@ -17,6 +17,8 @@ Target: TypeAlias = Callable[[None], None]
 MappedData: TypeAlias = Mapping[str, Any]
 
 
+
+
 class Server:
     def __init__(
         self,
@@ -52,6 +54,7 @@ class Server:
 
 
 class ServerFactory:
+
     @classmethod
     def __create_cli(cls, data: MappedData) -> CliManager:
         managers: Sequence[str] = data['managers']
@@ -70,7 +73,18 @@ class ServerFactory:
         databases: Databases = Databases()
 
         for name, options in data.values():
-            database_builder: DialectBuilder = DialectBuilder()
+            database_builder: DialectBuilder
+
+            try:
+                database_builder, = [
+                    base
+                    for base in cls.__dialects__
+                    if (options.get('dialect') or '').upper() == base.dialect
+                ]
+
+            except ValueError:
+                database_builder = DialectBuilder()
+
 
             database_builder\
                 .set_name(name)\
@@ -78,7 +92,11 @@ class ServerFactory:
                 .set_port(options['port'])\
                 .set_dbname(options['dbname'])\
                 .set_credentials(options['username'], options['password'])\
-                .set_drives(options['driver'], options.get('driver_async'))
+                
+
+            if options.get('driver') or options.get('driver_async'):
+                database_builder\
+                    .set_drives(options['driver'], options.get('driver_async'))
 
             if options.get('async'):
                 database_builder.set_async(options.get('async'))

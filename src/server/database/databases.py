@@ -3,17 +3,28 @@ from typing import (
     Optional,
     Mapping,
     Union,
-    Any
+    Any,
+    List
 )
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import Database
 from .interface_database import InterfaceDatabase
+from .dialect_builder import DialectBuilder
+from .dialects import (
+    MySQL,
+    Postgres
+)
 
 
 
 
 class Databases:
+    dialects: List[DialectBuilder] = [
+        MySQL(),
+        Postgres()
+    ]
+
     def __init__(self) -> None:
         self.__bases: Mapping[str, InterfaceDatabase] = {}
 
