@@ -41,8 +41,6 @@ class TaskManager(InterfaceCommand[Sequence[str]]):
             if task.name in arg
         ]
 
-        print(self.__tasks[0].name)
-
         if not tasks_found:
             self.__argument.print_help()
 
